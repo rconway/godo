@@ -9,12 +9,7 @@ func main() {
 	engine := gin.Default()
 	root := &engine.RouterGroup
 
-	root.GET("ping", func(c *gin.Context) {
-		c.JSON(200, gin.H{
-			"message": "pong",
-		})
-	})
-
+	routes.Root(root)
 	routes.Login(root)
 	routes.Todo(root)
 
