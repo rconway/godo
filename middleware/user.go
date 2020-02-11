@@ -14,7 +14,7 @@ func EnsureUser() gin.HandlerFunc {
 
 		if err != nil {
 			log.Println("...NO USERNAME - redirect to /login...")
-			c.Redirect(307, "../login")
+			c.Redirect(303, "../auth/login")
 		} else {
 			c.Set("username", username)
 			log.Printf("...username = %v...\n", username)
