@@ -19,39 +19,38 @@ func createToken() string {
 	mySigningKey := []byte("AllYourBase")
 
 	// Create the Claims
-	claims := MyCustomClaims{
-		"bar",
-		jwt.StandardClaims{
-			ExpiresAt: 15000,
-			Issuer:    "test",
-		},
-	}
+	// claims := MyCustomClaims{
+	// 	"bar",
+	// 	jwt.StandardClaims{
+	// 		ExpiresAt: 15000,
+	// 		Issuer:    "test",
+	// 	},
+	// }
+	claims := MyCustomClaims{}
+	claims.Foo = "fred"
+	claims.StandardClaims.ExpiresAt = time.Now().Unix() + 3600
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	ss, _ := token.SignedString(mySigningKey)
+	ss, err := token.SignedString(mySigningKey)
+
+	if err != nil {
+		fmt.Printf("Sign ERROR: %v\n", err)
+	}
 
 	return ss
 
 }
 
 func decodeToken(ss string) {
-
-	jwt.TimeFunc = func() time.Time {
-		return time.Unix(0, 0)
-	}
-
 	token, err := jwt.ParseWithClaims(ss, &MyCustomClaims{}, func(token *jwt.Token) (interface{}, error) {
 		return []byte("AllYourBase"), nil
 	})
 
 	if claims, ok := token.Claims.(*MyCustomClaims); ok && token.Valid {
-		fmt.Printf("%v %v", claims.Foo, claims.StandardClaims.ExpiresAt)
+		fmt.Printf("%v %v\n", claims.Foo, claims.StandardClaims.ExpiresAt - time.Now().Unix())
 	} else {
-		fmt.Println(err)
+		fmt.Printf("Decode ERROR: %v\n", err)
 	}
-
-	jwt.TimeFunc = time.Now
-
 }
 
 func main() {
