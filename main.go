@@ -1,67 +1,43 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"time"
 
 	jwt "github.com/dgrijalva/jwt-go"
 )
 
-func signingKey() []byte {
-	return []byte("AllYourBase")
-}
+func main() {
+	log.Println("...main...")
 
-// MyCustomClaims zzz
-type MyCustomClaims struct {
-	Username string `json:"username"`
-	jwt.StandardClaims
-}
+	// ss := createToken()
+	// log.Println(ss)
+	// decodeToken(ss)
 
-func createToken() string {
-
-	// Create the Claims
-	claims := MyCustomClaims{}
-	// 	"rconway",
-	// 	jwt.StandardClaims{
-	// 		ExpiresAt: time.Now().Unix() + 3600,
-	// 		Issuer:    "godo",
-	// 	},
-	// }
+	claims := &UserTokenClaims{}
 	claims.Username = "rconway"
 	claims.StandardClaims = jwt.StandardClaims{
 		ExpiresAt: time.Now().Unix() + 3600,
 		Issuer:    "godo",
 	}
 
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	ss, err := token.SignedString(signingKey())
-
-	if err != nil {
-		fmt.Printf("Sign ERROR: %v\n", err)
-	}
-
-	return ss
-
-}
-
-func decodeToken(ss string) {
-	token, err := jwt.ParseWithClaims(ss, &MyCustomClaims{}, func(token *jwt.Token) (interface{}, error) {
-		return signingKey(), nil
-	})
-
-	if claims, ok := token.Claims.(*MyCustomClaims); ok && token.Valid {
-		fmt.Printf("%v %v\n", claims.Username, claims.StandardClaims.ExpiresAt - time.Now().Unix())
-	} else {
-		fmt.Printf("Decode ERROR: %v\n", err)
-	}
-}
-
-func main() {
-	log.Println("...main...")
-
-	ss := createToken()
+	// Create token
+	token := NewUserToken(claims)
+	ss, err := token.EncodeJWT()
 	log.Println(ss)
 
-	decodeToken(ss)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Receive token
+	token2 := NewUserToken(nil)
+	ok := token2.DecodeJWT(ss)
+
+	if ok {
+		log.Printf("Username: %v - Issuer: %v - Expires: %v\n", token2.Username, token2.Issuer, token.ExpiresAt - time.Now().Unix())
+	} else {
+		log.Fatal("ERROR decoding token")
+	}
+
 }
