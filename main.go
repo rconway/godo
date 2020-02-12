@@ -8,30 +8,34 @@ import (
 	jwt "github.com/dgrijalva/jwt-go"
 )
 
+func signingKey() []byte {
+	return []byte("AllYourBase")
+}
+
 // MyCustomClaims zzz
 type MyCustomClaims struct {
-	Foo string `json:"foo"`
+	Username string `json:"username"`
 	jwt.StandardClaims
 }
 
 func createToken() string {
 
-	mySigningKey := []byte("AllYourBase")
-
 	// Create the Claims
-	// claims := MyCustomClaims{
-	// 	"bar",
+	claims := MyCustomClaims{}
+	// 	"rconway",
 	// 	jwt.StandardClaims{
-	// 		ExpiresAt: 15000,
-	// 		Issuer:    "test",
+	// 		ExpiresAt: time.Now().Unix() + 3600,
+	// 		Issuer:    "godo",
 	// 	},
 	// }
-	claims := MyCustomClaims{}
-	claims.Foo = "fred"
-	claims.StandardClaims.ExpiresAt = time.Now().Unix() + 3600
+	claims.Username = "rconway"
+	claims.StandardClaims = jwt.StandardClaims{
+		ExpiresAt: time.Now().Unix() + 3600,
+		Issuer:    "godo",
+	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	ss, err := token.SignedString(mySigningKey)
+	ss, err := token.SignedString(signingKey())
 
 	if err != nil {
 		fmt.Printf("Sign ERROR: %v\n", err)
@@ -43,11 +47,11 @@ func createToken() string {
 
 func decodeToken(ss string) {
 	token, err := jwt.ParseWithClaims(ss, &MyCustomClaims{}, func(token *jwt.Token) (interface{}, error) {
-		return []byte("AllYourBase"), nil
+		return signingKey(), nil
 	})
 
 	if claims, ok := token.Claims.(*MyCustomClaims); ok && token.Valid {
-		fmt.Printf("%v %v\n", claims.Foo, claims.StandardClaims.ExpiresAt - time.Now().Unix())
+		fmt.Printf("%v %v\n", claims.Username, claims.StandardClaims.ExpiresAt - time.Now().Unix())
 	} else {
 		fmt.Printf("Decode ERROR: %v\n", err)
 	}
