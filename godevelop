@@ -1,0 +1,84 @@
+#!/usr/bin/env bash
+ORIG_DIR="$(pwd)"
+cd "$(dirname "$0")"
+
+DEV_NAME="godevelop"
+if [ -n "$1" ]; then DEV_NAME="$1"; fi
+echo "Using image/container name: ${DEV_NAME}"
+
+GOENV_DIR="goenv"
+APP_DIR="/app"
+DEV_TOOLS_DIR="/godev"
+DEV_DOCKERFILE="Dockerfile-dev"
+DEV_COMPOSE_FILE="docker-compose-dev.yml"
+
+MYUID=`id -u`
+MYGID=`id -g`
+
+function prepareGoEnv()
+{
+  mkdir -p ${GOENV_DIR}/go
+  mkdir -p ${GOENV_DIR}/cache
+}
+
+function writeDockerfile()
+{
+  cat - <<EOF >${GOENV_DIR}/${DEV_DOCKERFILE}
+FROM golang
+WORKDIR ${APP_DIR}
+RUN GOPATH=${DEV_TOOLS_DIR} go get github.com/cespare/reflex
+ENTRYPOINT ${DEV_TOOLS_DIR}/bin/reflex -r '\.go$' -s go run .
+EOF
+}
+
+function writeComposeFile() {
+  cat - <<EOF >${GOENV_DIR}/${DEV_COMPOSE_FILE}
+version: '3'
+services:
+  ${DEV_NAME}:
+    build:
+      context: ..
+      dockerfile: ${GOENV_DIR}/${DEV_DOCKERFILE}
+    image: ${DEV_NAME}
+    container_name: ${DEV_NAME}
+    restart: "no"
+    ports:
+      - "8080:8080"
+    volumes:
+      - $PWD:${APP_DIR}
+      - $PWD/${GOENV_DIR}/go:/go
+      - $PWD/${GOENV_DIR}/cache:/.cache
+    user: ${MYUID}:${MYGID}
+EOF
+}
+
+function writeDockerIgnore()
+{
+  touch .dockerignore
+  sed -i "/^${GOENV_DIR}\\//d" .dockerignore
+  echo "${GOENV_DIR}/" >> .dockerignore
+}
+
+function dockerCompose()
+{
+  docker-compose -f "${GOENV_DIR}/${DEV_COMPOSE_FILE}" "$@"
+}
+
+function initiateDocker()
+{
+  dockerCompose down
+  dockerCompose up --build -d
+}
+
+function monitorWaitExit()
+{
+  trap "dockerCompose down ; cd \"${ORIG_DIR}\"" EXIT
+  dockerCompose logs -f
+}
+
+prepareGoEnv
+writeDockerfile
+writeComposeFile
+writeDockerIgnore
+initiateDocker
+monitorWaitExit
