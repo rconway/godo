@@ -10,20 +10,16 @@ import (
 func main() {
 	log.Println("...main...")
 
-	// ss := createToken()
-	// log.Println(ss)
-	// decodeToken(ss)
-
-	claims := &UserTokenClaims{}
-	claims.Username = "rconway"
-	claims.StandardClaims = jwt.StandardClaims{
+	// Outgoing token
+	tokenTx := &UserToken{}
+	tokenTx.Username = "rconway"
+	tokenTx.StandardClaims = jwt.StandardClaims{
 		ExpiresAt: time.Now().Unix() + 3600,
 		Issuer:    "godo",
 	}
 
 	// Create token
-	token := NewUserToken(claims)
-	ss, err := token.EncodeJWT()
+	ss, err := tokenTx.ToSignedString()
 	log.Println(ss)
 
 	if err != nil {
@@ -31,11 +27,11 @@ func main() {
 	}
 
 	// Receive token
-	token2 := NewUserToken(nil)
-	ok := token2.DecodeJWT(ss)
+	tokenRx := &UserToken{}
+	ok := tokenRx.FromSignedString(ss)
 
 	if ok {
-		log.Printf("Username: %v - Issuer: %v - Expires: %v\n", token2.Username, token2.Issuer, token.ExpiresAt - time.Now().Unix())
+		log.Printf("Username: %v - Issuer: %v - Expires: %v\n", tokenRx.Username, tokenRx.Issuer, tokenRx.ExpiresAt-time.Now().Unix())
 	} else {
 		log.Fatal("ERROR decoding token")
 	}
