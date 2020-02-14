@@ -10,12 +10,21 @@ import (
 func main() {
 	log.Println("...main...")
 
+	type CustomToken struct {
+		Age int
+		UserToken
+	}
+
 	// Outgoing token
-	tokenTx := &UserToken{}
-	tokenTx.Username = "rconway"
-	tokenTx.StandardClaims = jwt.StandardClaims{
-		ExpiresAt: time.Now().Unix() + 3600,
-		Issuer:    "godo",
+	tokenTx := &CustomToken{
+		Age: 123,
+		UserToken: UserToken{
+			Username: "fred",
+			StandardClaims: jwt.StandardClaims{
+				Issuer:    "richard",
+				ExpiresAt: time.Now().Unix() + 60,
+			},
+		},
 	}
 
 	// Create token
