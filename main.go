@@ -4,21 +4,21 @@ import (
 	"log"
 	"time"
 
-	jwt "github.com/dgrijalva/jwt-go"
+	"github.com/rconway/godo/jwt"
 )
 
 func main() {
 	log.Println("...main...")
 
-	type CustomToken struct {
-		Age int
-		UserToken
+	type CustomClaims struct {
+		Age int `json:"age"`
+		jwt.UserClaims
 	}
 
-	// Outgoing token
-	tokenTx := &CustomToken{
+	// Outgoing claims
+	claimsTx := CustomClaims{
 		Age: 123,
-		UserToken: UserToken{
+		UserClaims: jwt.UserClaims{
 			Username: "fred",
 			StandardClaims: jwt.StandardClaims{
 				Issuer:    "richard",
@@ -27,20 +27,20 @@ func main() {
 		},
 	}
 
-	// Create token
-	ss, err := tokenTx.ToSignedString()
+	// Create token as string
+	ss, err := jwt.ClaimsToSignedString(&claimsTx)
 	log.Println(ss)
 
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	// Receive token
-	tokenRx := &UserToken{}
-	ok := tokenRx.FromSignedString(ss)
+	// Receive token as string
+	claims, err := jwt.ClaimsFromSignedString(ss, &CustomClaims{})
+	claimsRx := claims.(*CustomClaims)
 
-	if ok {
-		log.Printf("Username: %v - Issuer: %v - Expires: %v\n", tokenRx.Username, tokenRx.Issuer, tokenRx.ExpiresAt-time.Now().Unix())
+	if err == nil {
+		log.Printf("Age: %v - Username: %v - Issuer: %v - Expires: %v\n", claimsRx.Age, claimsRx.Username, claimsRx.Issuer, claimsRx.ExpiresAt-time.Now().Unix())
 	} else {
 		log.Fatal("ERROR decoding token")
 	}
